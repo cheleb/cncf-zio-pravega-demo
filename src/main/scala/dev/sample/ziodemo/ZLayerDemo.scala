@@ -4,14 +4,16 @@ import zio._
 
 case class User(id: Int, name: String, addressId: Int)
 
-case class UserRepo(dbname: String):
+
+case class UserRepo(dbname: String) extends AutoCloseable:
   def findById(id: Int): RIO[UserRepo, User] =
     ZIO.succeed(User(id, s"Derek", 1))
+  override def close(): Unit = println("Closing")
 
 object UserRepo:
 
   val live = ZLayer {
-    ZIO.succeed(new UserRepo("test"))
+    ZIO.succeed(new UserRepo("test")).withFinalizerAuto
   }
 
   def findById(id: Int): RIO[UserRepo, User] =
@@ -28,10 +30,15 @@ object ZLayerDemo extends ZIOAppDefault:
 
   } yield ()
 
+
+
+
+  
   override def run =
     for {
       _ <- Console.printLine("---------")
-      _ <- program.provide(
+      _ <- program.provideSome(
+        Scope.default,
         UserRepo.live,
         AddressRepo.live,
         PostalService.live,
