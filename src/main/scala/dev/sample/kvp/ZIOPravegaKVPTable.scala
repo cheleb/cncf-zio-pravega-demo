@@ -24,10 +24,7 @@ object ZIOPravegaKVPTable extends ZIOAppDefault {
     res <- testStream(0, 100) >>> sink
   } yield res
 
- 
-
-
-   def writeToTableAges = for {
+  def writeToTableAges = for {
 
     tableSink <- PravegaTable.sink("ages", tableWriterSettings, _ + _)
 
@@ -35,7 +32,6 @@ object ZIOPravegaKVPTable extends ZIOAppDefault {
 
     _ <- stream1.take(100).map(p => (p.age, 1)).run(tableSink)
   } yield ()
-
 
   def streamToTable(
       tableSink: ZSink[Any, Throwable, (Int, Int), Nothing, Unit]
@@ -53,7 +49,6 @@ object ZIOPravegaKVPTable extends ZIOAppDefault {
     _ <- fiber.join
   } yield ()
 
- 
   def readAges = for {
     source <- PravegaTable.source("ages", tableReaderSettings)
     ages <- source.take(10) >>> ZSink.collectAll

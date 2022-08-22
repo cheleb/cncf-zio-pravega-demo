@@ -4,17 +4,14 @@ import zio._
 
 case class User(id: Int, name: String, addressId: Int)
 
-trait UserRepo:
-  def findById(id: Int): RIO[UserRepo, User]
-
-case class UserRepoImpl(dbname: String) extends UserRepo:
-  override def findById(id: Int): RIO[UserRepo, User] =
+case class UserRepo(dbname: String):
+  def findById(id: Int): RIO[UserRepo, User] =
     ZIO.succeed(User(id, s"Derek", 1))
 
 object UserRepo:
 
   val live = ZLayer {
-    ZIO.succeed(new UserRepoImpl("test"))
+    ZIO.succeed(new UserRepo("test"))
   }
 
   def findById(id: Int): RIO[UserRepo, User] =
@@ -25,6 +22,8 @@ object ZLayerDemo extends ZIOAppDefault:
   val program = for {
 
     user <- UserRepo.findById(1)
+    address <- AddressRepo.findById(user.addressId)
+    _ <- PostalService.sendMail(user.id)
     _ <- Console.printLine(s"Hello ${user.name}")
 
   } yield ()
@@ -32,7 +31,11 @@ object ZLayerDemo extends ZIOAppDefault:
   override def run =
     for {
       _ <- Console.printLine("---------")
-      _ <- program.provideLayer(UserRepo.live)
+      _ <- program.provide(
+        UserRepo.live,
+        AddressRepo.live,
+        PostalService.live,
+      )
       _ <- Console.printLine("+++++++++")
     } yield ()
 
